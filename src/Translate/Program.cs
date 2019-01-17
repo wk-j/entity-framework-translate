@@ -7,16 +7,35 @@ namespace Translate {
     class Program {
 
         static EasyValidatorContext Context() {
+            return MySql();
+        }
+
+        static EasyValidatorContext PostgreSQL() {
             var builder = new DbContextOptionsBuilder();
             builder.UseNpgsql("Host=localhost;Port=5432;User Id=postgres;Password=1234;Database=Translate");
             var options = builder.Options;
             return new EasyValidatorContext(options, new CustomOptions { ShowSqlLog = true });
         }
 
+        static EasyValidatorContext MySql() {
+            var conn = "Host=localhost; User Id=root; Password=1234; Database=Hello";
+
+            var builder = new DbContextOptionsBuilder();
+            builder.UseMySql(conn);
+
+            var options = builder.Options;
+            return new EasyValidatorContext(options, new CustomOptions { ShowSqlLog = true });
+        }
+
+        static void Create() {
+            using (var context = Context()) {
+                context.Database.EnsureCreated();
+            }
+        }
+
         static void A() {
 
             using (var context = Context()) {
-                context.Database.EnsureCreated();
 
                 var query = from file in context.Files
                             join property in context.Properties on file.Id equals property.QFileId into properties
@@ -60,7 +79,7 @@ namespace Translate {
         }
 
         static void NoLimit() {
-            Console.WriteLine(">> NO LIMIT --");
+            Console.WriteLine(">> NO LIMIT ---------------------");
             using (var context = Context()) {
                 var query =
                     from file in context.Files
@@ -76,15 +95,12 @@ namespace Translate {
         }
 
         static void Limit() {
-            Console.WriteLine(">> NO LIMIT --");
+            Console.WriteLine(">> LIMIT ----------------------");
             using (var context = Context()) {
                 var query =
                     from file in context.Files
-                        // join property in context.Properties on file.Id equals property.QFileId into properties
-                        // where properties.Count() > 10
                     select new {
                         File = file,
-                        // Properties = properties
                     };
 
                 var a = query.OrderBy(x => x.File.Id).Take(100).ToList();
@@ -92,8 +108,9 @@ namespace Translate {
         }
 
         static void Main(string[] args) {
-            Limit();
+            Create();
             NoLimit();
+            Limit();
         }
     }
 }
