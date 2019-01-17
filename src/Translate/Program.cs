@@ -5,13 +5,17 @@ using Translate.Models;
 
 namespace Translate {
     class Program {
-        static void Main(string[] args) {
 
+        static EasyValidatorContext Context() {
             var builder = new DbContextOptionsBuilder();
             builder.UseNpgsql("Host=localhost;Port=5432;User Id=postgres;Password=1234;Database=Translate");
             var options = builder.Options;
+            return new EasyValidatorContext(options, new CustomOptions { ShowSqlLog = true });
+        }
 
-            using (var context = new EasyValidatorContext(options, new CustomOptions { ShowSqlLog = true })) {
+        static void A() {
+
+            using (var context = Context()) {
                 context.Database.EnsureCreated();
 
                 var query = from file in context.Files
@@ -53,6 +57,43 @@ namespace Translate {
 
                 var records = query.ToList();
             }
+        }
+
+        static void NoLimit() {
+            Console.WriteLine(">> NO LIMIT --");
+            using (var context = Context()) {
+                var query =
+                    from file in context.Files
+                    join property in context.Properties on file.Id equals property.QFileId into properties
+                    where properties.Count() > 10
+                    select new {
+                        File = file,
+                        Properties = properties
+                    };
+
+                var a = query.OrderBy(x => x.File.Id).Take(100).ToList();
+            }
+        }
+
+        static void Limit() {
+            Console.WriteLine(">> NO LIMIT --");
+            using (var context = Context()) {
+                var query =
+                    from file in context.Files
+                        // join property in context.Properties on file.Id equals property.QFileId into properties
+                        // where properties.Count() > 10
+                    select new {
+                        File = file,
+                        // Properties = properties
+                    };
+
+                var a = query.OrderBy(x => x.File.Id).Take(100).ToList();
+            }
+        }
+
+        static void Main(string[] args) {
+            Limit();
+            NoLimit();
         }
     }
 }
