@@ -29,8 +29,8 @@ namespace Contains {
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             modelBuilder.Entity<TableA>().HasData(
-                new TableA { Id = 1, N1 = "N11 bbbb jj" },
-                new TableA { Id = 2, N1 = "N12 aaaa jj" }
+                new TableA { Id = 1, N1 = "An implementation of the SQL LIKE operation" },
+                new TableA { Id = 2, N1 = "This API supports the Entity Framework Core infrastructure" }
             );
             modelBuilder.Entity<TableB>().HasData(
                 new TableB { Id = 1, N2 = "N21" },
@@ -55,18 +55,20 @@ namespace Contains {
             context.Database.EnsureCreated();
 
             var array = new string[] {
-                "bbb",
-                "aaa",
-            }.Select(x => $"%{x}%").ToArray();
+                "%SQL%",
+                "%API%",
+            };
 
             /*
                 SELECT *
                 FROM  public."TableA"
-                WHERE "N1" LIKE ANY (array['%bbb%', '%aaa%']) = true
+                WHERE "N1" LIKE ANY (array['%SQL%', '%API%']) = TRUE
              */
 
             // var results = context.TableA.Where(tableA => array.Any(arrayK => tableA.N1.Contains(arrayK)));
-            var results = context.TableA.Where(tableA => array.Any(arrayK => EF.Functions.Like(tableA.N1, arrayK)));
+            var results = context.TableA.Where(tableA =>
+                array.Any(arrayK => EF.Functions.Like(tableA.N1, arrayK)));
+
             foreach (var item in results) {
                 Console.WriteLine($"-- {item.N1}");
             }
