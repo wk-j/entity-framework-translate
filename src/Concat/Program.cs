@@ -5,9 +5,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Concat {
-    class TableA {
+    public class TableA {
         [Key]
         public int Id { set; get; }
         public string N1 { set; get; }
@@ -17,6 +18,11 @@ namespace Concat {
         [Key]
         public int Id { set; get; }
         public string N2 { set; get; }
+
+        [ForeignKey("Reference")]
+        public TableA TableA { set; get; }
+
+        public int Reference { set; get; }
     }
 
     class MyContext : DbContext {
@@ -35,12 +41,12 @@ namespace Concat {
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             modelBuilder.Entity<TableA>().HasData(
-                new TableA { Id = 1, N1 = "N11" },
-                new TableA { Id = 2, N1 = "N12" }
+                new TableA { Id = 1, N1 = "In the news" },
+                new TableA { Id = 2, N1 = "NASA" }
             );
             modelBuilder.Entity<TableB>().HasData(
-                new TableB { Id = 1, N2 = "N21" },
-                new TableB { Id = 2, N2 = "N22" }
+                new TableB { Id = 1, N2 = "Roma", Reference = 1 },
+                new TableB { Id = 2, N2 = "Win", Reference = 2 }
             );
         }
     }
@@ -60,24 +66,22 @@ namespace Concat {
             var provider = collection.BuildServiceProvider();
             var context = provider.GetService<MyContext>();
 
+            // context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
 
             var query =
                 from a in context.TableA
-                join b in context.TableB on a.Id equals b.Id
+                join b in context.TableB on a.Id equals b.Reference
                 select new {
-                    A = a.Id,
-                    B = b.Id,
-                    N12 = string.Concat(a.N1, b.N2)
-                    // N12 = $"{a.N1}{b.N2}"
+                    A = a.N1,
+                    B = b.N2,
                 };
 
-            query = query.Where(x => x.N12.Contains("N12N22"));
-            // query = query.Where(x => x.A == 1).Take(1);
+            var queryA = query.Where(x => string.Concat(x.A, x.B).Contains("SAWin")).ToList();
+            var queryB = query.Where(x => (x.A + x.B).Contains("SAWin")).ToList();
 
-            foreach (var item in query) {
-                Console.WriteLine($" -- {item.A} {item.B} {item.N12}");
-            }
+            Console.WriteLine(queryA.Count);
+            Console.WriteLine(queryB.Count);
         }
     }
 }
