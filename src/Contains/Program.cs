@@ -57,7 +57,7 @@ namespace Contains {
             var array = new string[] {
                 "bbb",
                 "aaa",
-            }.Select(x => $"%{x}%");
+            }.Select(x => $"%{x}%").ToArray();
 
             /*
                 SELECT *
